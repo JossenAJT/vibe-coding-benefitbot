@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs/promises';
@@ -61,9 +62,44 @@ interface PolicyData {
   default_behavior: { deny_if_not_in_allowed: boolean; notes: string };
 }
 
-// Helper function for fuzzy matching (can be improved with more advanced NLP)
-function fuzzyMatch(query: string, target: string): boolean {
-  return target.toLowerCase().includes(query.toLowerCase());
+// Levenshtein distance function for string similarity
+function levenshteinDistance(a: string, b: string): number {
+  const an = a.length;
+  const bn = b.length;
+
+  if (an === 0) return bn;
+  if (bn === 0) return an;
+
+  const matrix: number[][] = [];
+
+  for (let i = 0; i <= an; i++) {
+    matrix[i] = [i];
+  }
+
+  for (let j = 0; j <= bn; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= an; i++) {
+    for (let j = 1; j <= bn; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1, // deletion
+        matrix[i][j - 1] + 1, // insertion
+        matrix[i - 1][j - 1] + cost // substitution
+      );
+    }
+  }
+
+  return matrix[an][bn];
+}
+
+// Helper function for fuzzy matching with a threshold
+function isSimilar(query: string, target: string, threshold: number = 0.4): boolean {
+  const distance = levenshteinDistance(query, target);
+  const maxLength = Math.max(query.length, target.length);
+  if (maxLength === 0) return true; // Both empty strings are similar
+  return (1 - distance / maxLength) > threshold;
 }
 
 export async function POST(req: NextRequest) {
@@ -82,13 +118,14 @@ export async function POST(req: NextRequest) {
     let responseMessage = policy.responses.REJECT_OUTSIDE_SCOPE;
     let isClaimable = false;
     let matchedCategoryName: string | undefined;
+    const suggestions: Set<string> = new Set();
 
     // 1. Check against allowed categories and their synonyms/examples
     for (const category of policy.categories) {
       if (category.allowed) {
         // Check examples_included
         for (const example of category.examples_included) {
-          if (fuzzyMatch(userQuery, example)) {
+          if (userQuery.includes(example.toLowerCase()) || isSimilar(userQuery, example.toLowerCase(), 0.7)) {
             isClaimable = true;
             matchedCategoryName = category.name;
             break;
@@ -98,7 +135,7 @@ export async function POST(req: NextRequest) {
         // Check synonyms
         if (!isClaimable && policy.matching.synonyms[category.key]) {
           for (const synonym of policy.matching.synonyms[category.key]) {
-            if (fuzzyMatch(userQuery, synonym)) {
+            if (userQuery.includes(synonym.toLowerCase()) || isSimilar(userQuery, synonym.toLowerCase(), 0.7)) {
               isClaimable = true;
               matchedCategoryName = category.name;
               break;
@@ -109,7 +146,7 @@ export async function POST(req: NextRequest) {
         // If a match is found in included/synonyms, check against category's excluded examples
         if (isClaimable) {
           for (const excludedExample of category.examples_excluded) {
-            if (fuzzyMatch(userQuery, excludedExample)) {
+            if (userQuery.includes(excludedExample.toLowerCase()) || isSimilar(userQuery, excludedExample.toLowerCase(), 0.7)) {
               isClaimable = false; // It was included, but then explicitly excluded within the category
               responseMessage = policy.responses.REJECT_OUTSIDE_SCOPE; // Or a more specific message if available
               break;
@@ -124,7 +161,7 @@ export async function POST(req: NextRequest) {
     if (!isClaimable) {
       for (const notAllowedItem of policy.not_allowed) {
         for (const example of notAllowedItem.examples) {
-          if (fuzzyMatch(userQuery, example)) {
+          if (userQuery.includes(example.toLowerCase()) || isSimilar(userQuery, example.toLowerCase(), 0.7)) {
             responseMessage = notAllowedItem.reason;
             break;
           }
@@ -134,14 +171,34 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Apply conditions (simplified for now, more complex conditions would need more logic)
-    // For example, if a category has 'in_person_only: true' and the query implies online, reject.
-    // This part would require more advanced NLP to infer 'online' vs 'in-person' from userQuery.
-    // For now, we'll just use the REJECT_ONLINE_ONLY if a category explicitly disallows online and the query implies it.
     if (isClaimable && matchedCategoryName) {
         const category = policy.categories.find(cat => cat.name === matchedCategoryName);
         if (category?.conditions?.in_person_only && userQuery.includes('online')) {
             isClaimable = false;
             responseMessage = policy.responses.REJECT_ONLINE_ONLY;
+        }
+    }
+
+    // 4. If still not claimable, look for suggestions
+    if (!isClaimable && responseMessage === policy.responses.REJECT_OUTSIDE_SCOPE) {
+        const allPossibleItems: string[] = [];
+        policy.categories.forEach(cat => {
+            if (cat.allowed) {
+                allPossibleItems.push(...cat.examples_included);
+                if (policy.matching.synonyms[cat.key]) {
+                    allPossibleItems.push(...policy.matching.synonyms[cat.key]);
+                }
+            }
+        });
+
+        for (const item of allPossibleItems) {
+            if (isSimilar(userQuery, item.toLowerCase(), 0.6)) { // Lower threshold for suggestions
+                suggestions.add(item);
+            }
+        }
+
+        if (suggestions.size > 0) {
+            responseMessage = `This item isn't directly listed. Did you mean: ${Array.from(suggestions).join(', ')}?`;
         }
     }
 

@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs/promises';
@@ -99,7 +98,9 @@ function isSimilar(query: string, target: string, threshold: number = 0.4): bool
   const distance = levenshteinDistance(query, target);
   const maxLength = Math.max(query.length, target.length);
   if (maxLength === 0) return true; // Both empty strings are similar
-  return (1 - distance / maxLength) > threshold;
+  // Calculate similarity score (0 to 1, where 1 is identical)
+  const similarity = 1 - distance / maxLength;
+  return similarity > threshold;
 }
 
 export async function POST(req: NextRequest) {
@@ -125,7 +126,14 @@ export async function POST(req: NextRequest) {
       if (category.allowed) {
         // Check examples_included
         for (const example of category.examples_included) {
-          if (userQuery.includes(example.toLowerCase()) || isSimilar(userQuery, example.toLowerCase(), 0.7)) {
+          const lowerCaseExample = example.toLowerCase();
+          if (userQuery.includes(lowerCaseExample) || lowerCaseExample.includes(userQuery)) {
+            isClaimable = true;
+            matchedCategoryName = category.name;
+            break;
+          }
+          // Fallback to isSimilar if no direct includes match
+          if (!isClaimable && isSimilar(userQuery, lowerCaseExample, 0.7)) {
             isClaimable = true;
             matchedCategoryName = category.name;
             break;
@@ -135,7 +143,14 @@ export async function POST(req: NextRequest) {
         // Check synonyms
         if (!isClaimable && policy.matching.synonyms[category.key]) {
           for (const synonym of policy.matching.synonyms[category.key]) {
-            if (userQuery.includes(synonym.toLowerCase()) || isSimilar(userQuery, synonym.toLowerCase(), 0.7)) {
+            const lowerCaseSynonym = synonym.toLowerCase();
+            if (userQuery.includes(lowerCaseSynonym) || lowerCaseSynonym.includes(userQuery)) {
+              isClaimable = true;
+              matchedCategoryName = category.name;
+              break;
+            }
+            // Fallback to isSimilar if no direct includes match
+            if (!isClaimable && isSimilar(userQuery, lowerCaseSynonym, 0.7)) {
               isClaimable = true;
               matchedCategoryName = category.name;
               break;
@@ -146,7 +161,8 @@ export async function POST(req: NextRequest) {
         // If a match is found in included/synonyms, check against category's excluded examples
         if (isClaimable) {
           for (const excludedExample of category.examples_excluded) {
-            if (userQuery.includes(excludedExample.toLowerCase()) || isSimilar(userQuery, excludedExample.toLowerCase(), 0.7)) {
+            const lowerCaseExcludedExample = excludedExample.toLowerCase();
+            if (userQuery.includes(lowerCaseExcludedExample) || lowerCaseExcludedExample.includes(userQuery) || isSimilar(userQuery, lowerCaseExcludedExample, 0.7)) {
               isClaimable = false; // It was included, but then explicitly excluded within the category
               responseMessage = policy.responses.REJECT_OUTSIDE_SCOPE; // Or a more specific message if available
               break;
@@ -161,7 +177,8 @@ export async function POST(req: NextRequest) {
     if (!isClaimable) {
       for (const notAllowedItem of policy.not_allowed) {
         for (const example of notAllowedItem.examples) {
-          if (userQuery.includes(example.toLowerCase()) || isSimilar(userQuery, example.toLowerCase(), 0.7)) {
+          const lowerCaseExample = example.toLowerCase();
+          if (userQuery.includes(lowerCaseExample) || lowerCaseExample.includes(userQuery) || isSimilar(userQuery, lowerCaseExample, 0.7)) {
             responseMessage = notAllowedItem.reason;
             break;
           }

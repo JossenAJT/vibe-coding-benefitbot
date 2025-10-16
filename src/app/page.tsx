@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, FormEvent, useRef, useEffect } from 'react';
-import { GeistSans } from 'next/font/google';
+// Removed: import { GeistSans } from 'next/font/google';
 
-const geistSans = GeistSans({ subsets: ['latin'] });
+// Removed: const geistSans = GeistSans({ subsets: ['latin'] });
 
 interface Message {
   text: string;
@@ -60,7 +59,7 @@ export default function Home() {
   };
 
   return (
-    <div className={`${geistSans.className} container`}>
+    <div className="container">
       <header className="header">
         <h1>HR Benefit Bot</h1>
       </header>

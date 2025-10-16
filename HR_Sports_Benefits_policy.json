@@ -1,0 +1,272 @@
+{
+  "policy_name": "Sports Benefits",
+  "version": "1.0.0",
+  "generated_at": "2025-10-15T10:44:03.403160Z",
+  "jurisdiction": "Malaysia",
+  "currency": "MYR",
+  "scope_note": "Only the items explicitly listed here are considered; anything not listed is not claimable.",
+  "eligibility": {
+    "employees_only": true
+  },
+  "claim_year_rule": {
+    "id": "CLAIM_YEAR",
+    "description": "Expenses incurred in a calendar year must be submitted and claimed within the same calendar year, regardless of event/activity date.",
+    "enforcement": "reject_if_year_mismatch"
+  },
+  "receipt_rule": {
+    "id": "RCPT_NAME",
+    "description": "Receipt/invoice must show Company name OR staff full legal name (matching IC). Nicknames/short names are not acceptable.",
+    "accepted_formats": [
+      "e-receipt",
+      "paper invoice"
+    ],
+    "required_fields_hint": [
+      "issue date",
+      "provider name",
+      "itemized description",
+      "amount",
+      "currency",
+      "name field"
+    ],
+    "fallback_note": "Case-by-case exception subject to HR & Finance approval if provider cannot print names."
+  },
+  "approval": {
+    "auto_approve": false,
+    "route_to": [
+      "HR",
+      "Finance"
+    ],
+    "tone": "friendly_yet_firm"
+  },
+  "categories": [
+    {
+      "id": 1,
+      "key": "gym_fitness_club",
+      "name": "Gym / Fitness Club",
+      "allowed": true,
+      "conditions": {
+        "in_person_only": true,
+        "include_day_passes": true,
+        "include_corporate_partner_passes": true,
+        "online_allowed": false,
+        "include_security_deposit_if_nonrefundable": false
+      },
+      "examples_included": [
+        "Monthly gym membership",
+        "Annual fitness club membership",
+        "Day pass",
+        "Corporate partner gym pass"
+      ],
+      "examples_excluded": [
+        "Online-only fitness subscriptions",
+        "Virtual coaching apps"
+      ]
+    },
+    {
+      "id": 2,
+      "key": "personal_trainer_coaching",
+      "name": "Personal Trainer / Coaching Fee",
+      "allowed": true,
+      "conditions": {
+        "in_person_only": true,
+        "online_allowed": false
+      },
+      "examples_included": [
+        "1:1 personal training session",
+        "Small group coaching at gym",
+        "Martial arts coaching"
+      ],
+      "examples_excluded": [
+        "Virtual PT sessions",
+        "Online coaching platforms"
+      ]
+    },
+    {
+      "id": 3,
+      "key": "sports_event_fees",
+      "name": "Registration / Participation Fees for Sports Event",
+      "allowed": true,
+      "conditions": {
+        "in_person_only": true,
+        "online_allowed": false
+      },
+      "examples_included": [
+        "Marathon race fee",
+        "Triathlon entry",
+        "Futsal tournament registration",
+        "Swim meet entry fee"
+      ],
+      "examples_excluded": [
+        "Virtual runs",
+        "Online-only challenges"
+      ]
+    },
+    {
+      "id": 4,
+      "key": "rental_sports_equipment",
+      "name": "Rental of Sports Equipment",
+      "allowed": true,
+      "conditions": {
+        "in_person_only": true,
+        "online_allowed": false,
+        "exclude_apparel_rental": true,
+        "exclude_wearable_tech": true,
+        "include_security_deposit_if_nonrefundable": true,
+        "security_deposit_note": "Invoice must explicitly state non-refundable and treated as advance payment."
+      },
+      "examples_included": [
+        "Racket rental",
+        "Ball rental",
+        "Climbing shoe rental (rented, not purchased)",
+        "Kayak rental"
+      ],
+      "examples_excluded": [
+        "Apparel rental",
+        "Wearable tech rental (e.g., smartwatch)",
+        "Any purchases of gear"
+      ]
+    },
+    {
+      "id": 5,
+      "key": "sports_classes_lessons",
+      "name": "Sports Class / Lessons",
+      "allowed": true,
+      "conditions": {
+        "in_person_only": true,
+        "online_allowed": false
+      },
+      "examples_included": [
+        "Yoga studio class",
+        "Swimming lesson",
+        "Dance class",
+        "Martial arts class"
+      ],
+      "examples_excluded": [
+        "Zoom fitness classes",
+        "App-based courses",
+        "Pre-recorded programs"
+      ]
+    },
+    {
+      "id": 6,
+      "key": "facilities_uses",
+      "name": "Facilities Uses",
+      "allowed": true,
+      "conditions": {
+        "in_person_only": true,
+        "include_day_passes": true,
+        "online_allowed": false
+      },
+      "examples_included": [
+        "Badminton court booking",
+        "Swimming pool entry",
+        "Climbing gym day pass",
+        "Futsal court booking"
+      ],
+      "examples_excluded": [
+        "Virtual facility access",
+        "Golf-related items (intentionally omitted)"
+      ]
+    }
+  ],
+  "not_allowed": [
+    {
+      "id": 101,
+      "key": "purchase_equipment_or_gear",
+      "name": "Purchase of Sports Equipment or Gear",
+      "allowed": false,
+      "examples": [
+        "Shoes and clothing/apparel",
+        "Rackets/bats/balls",
+        "Yoga mats and dumbbells",
+        "Bicycles",
+        "Protective gear and mouthguards",
+        "Smartwatches/fitness trackers/HR straps",
+        "Helmets, swim goggles, climbing harness",
+        "Golf clubs"
+      ],
+      "reason": "Purchases are excluded - only rentals are allowed where applicable."
+    }
+  ],
+  "matching": {
+    "synonyms": {
+      "gym_fitness_club": [
+        "gym membership",
+        "fitness club membership",
+        "day pass",
+        "corporate gym pass"
+      ],
+      "personal_trainer_coaching": [
+        "personal training",
+        "PT session",
+        "coaching fee"
+      ],
+      "sports_event_fees": [
+        "race fee",
+        "tournament fee",
+        "event registration"
+      ],
+      "rental_sports_equipment": [
+        "equipment rental",
+        "rental fee"
+      ],
+      "sports_classes_lessons": [
+        "yoga class",
+        "swimming lesson",
+        "martial arts class"
+      ],
+      "facilities_uses": [
+        "court booking",
+        "lane booking",
+        "climbing gym pass",
+        "futsal booking"
+      ]
+    }
+  },
+  "decision_flow": [
+    {
+      "order": 1,
+      "action": "normalize_query"
+    },
+    {
+      "order": 2,
+      "action": "match_against_allowed_categories_using_synonyms"
+    },
+    {
+      "order": 3,
+      "action": "check_disallowed_purchases"
+    },
+    {
+      "order": 4,
+      "action": "validate_in_person_requirement"
+    },
+    {
+      "order": 5,
+      "action": "for_rentals_check_nonrefundable_deposit_rule_if_applicable"
+    },
+    {
+      "order": 6,
+      "action": "validate_receipt_naming_rule"
+    },
+    {
+      "order": 7,
+      "action": "validate_claim_year_rule"
+    },
+    {
+      "order": 8,
+      "action": "route_to_hr_finance_for_approval"
+    }
+  ],
+  "responses": {
+    "APPROVE_ROUTE": "This looks claimable under “{category}”, subject to valid receipt naming and same-year claim. I’ll route it to HR & Finance for approval.",
+    "REJECT_OUTSIDE_SCOPE": "Thanks for checking. This item isn’t on our approved Sports Benefits list, so it isn’t claimable at this time.",
+    "REJECT_RECEIPT_NAME": "We can’t process this claim because the receipt doesn’t show the Company name or your full legal name (matching IC).",
+    "REJECT_YEAR": "We can’t process this claim because expenses must be claimed within the same calendar year they were spent.",
+    "REJECT_ONLINE_ONLY": "Thanks for checking. Currently, we only accept claims for in-person activities. Online classes and virtual events are not claimable at this time.",
+    "ESCALATE_CASE_BY_CASE": "This will be reviewed case-by-case by HR & Finance since the provider cannot issue receipts with the required name details."
+  },
+  "default_behavior": {
+    "deny_if_not_in_allowed": true,
+    "notes": "Anything not specifically mentioned in allowed categories is considered not claimable unless policy is updated."
+  }
+}

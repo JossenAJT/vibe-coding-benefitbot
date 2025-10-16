@@ -1,6 +1,10 @@
+
 'use client';
 
 import { useState, FormEvent, useRef, useEffect } from 'react';
+import { GeistSans } from 'next/font/google';
+
+const geistSans = GeistSans({ subsets: ['latin'] });
 
 interface Message {
   text: string;
@@ -15,7 +19,6 @@ export default function Home() {
   const chatWindowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Scroll to the bottom of the chat window when messages change
     if (chatWindowRef.current) {
       chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
     }
@@ -57,8 +60,10 @@ export default function Home() {
   };
 
   return (
-    <div className="container">
-      <h1>HR Benefit Bot</h1>
+    <div className={`${geistSans.className} container`}>
+      <header className="header">
+        <h1>HR Benefit Bot</h1>
+      </header>
       <div className="chat-window" ref={chatWindowRef}>
         {messages.map((msg, index) => (
           <div key={index} className={`chat-message ${msg.sender === 'user' ? 'user-message' : 'bot-message'}`}>
@@ -73,7 +78,7 @@ export default function Home() {
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           className="input-field"
-          placeholder="e.g., 'Gym membership' or 'Yoga mat'"
+          placeholder="Ask about a benefit, e.g., 'Gym membership' or 'Yoga mat'"
           disabled={isLoading}
         />
         <button type="submit" className="send-button" disabled={isLoading}>
